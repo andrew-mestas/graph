@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Obesity Graph</title>
+<script src="./dataset/d3.js"></script>
+<script src="./dataset/helpers.js"></script>
+<style>svg {
+  font: 10px sans-serif;
+  shape-rendering: crispEdges;
+}
+
+rect {
+  fill: #ddd;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #fff;
+}</style>
+</head>
+<body>
+<input type="file" accept=".csv">
+Locations 
+ <select id="locations">
+  </select>
+Years 
+ <select id="years">
+  </select>
+Age Groups 
+ <select id="ages">
+  </select>
+Sex
+ <select id="sex">
+  </select>
+Metric
+ <select id="metric">
+  </select>
+
+<div id="info">
+Loading...
+</div>
+  <br><br><hr>
+
+ <form> 	
+Order By
+ <select id="filter1" onchange="store(this.value,1)">
+ <option>Please Select One</option>
+  </select>
+Filter for
+ <select id="filter2" onchange="store(this.value,2)">
+  <option>Please Select One</option>
+  </select>
+Statistics by
+ <select id="filter3" onchange="store(this.value,3)">
+  <option>Please Select One</option>
+  </select>
+<button id="sort">Begin</button>
+ </form>
+
+<script>
+
+var filter = ["overweight", "obese"];
+beginParse("./dataset/testdata.csv", filter);
+
+
+var init = function(){
+
+var years = Object.keys(parsedQSet.year);
+var yearStart = parseInt(years[0]);
+
+setUpGraph(1080,500,yearStart,yearStart+years.length,-1,1);
+// Set up options
+Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
+Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"years")});
+Object.keys(parsedQSet.age_group).forEach(function(n){addElement("option",n,"ages")});
+Object.keys(parsedQSet.sex).forEach(function(n){addElement("option",n,"sex")});
+Object.keys(parsedQSet.metric).forEach(function(n){addElement("option",n,"metric")});
+names.forEach(function(n){addElement("option",n,"filter1")});
+filter.forEach(function(n){addElement("option",n,"filter2")});
+names.forEach(function(n){addElement("option",n,"filter3")});
+
+document.getElementById("sort").addEventListener("click", function(e){
+	e.preventDefault();
+	getGlobalData(parsedQSet, op1, op2, op3);
+
+});
+
+};
+
+
+</script>
+
+</body>
+</html>
