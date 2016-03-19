@@ -137,9 +137,6 @@ parsedQSet[name] = location_id_hash_array;
 var updateGraph = function(){
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
-var lineData = [ { "x": 1990,   "y": .022},  { "x":1994,  "y":.33},
-              { "x": 1996,  "y": .14}, { "x": 2002,  "y": .22}];	
-
 var lineDataF = {};
 var keys = Object.keys(parsedQSet[op3]);
 
@@ -150,7 +147,7 @@ for(var i in keys){
 
 	lineDataF[low] = [];
 	lineDataF[mean] = [];
-	lineDataF[high] = []
+	lineDataF[high] = [];
 }
 console.log(lineDataF)
 Object.keys(statistics_by_criteria).forEach(function(key, idx){
@@ -182,8 +179,6 @@ var classCount= 0;
 
 	if(!initial){
 		var className = ".line" + (classCount).toString();
-		// console.log(className)
-
 		svg.selectAll(className).transition()
 	  	   .attr("d", lineFn(lineDataF[i]))
 	  	   .attr("stroke", colors[idx])
