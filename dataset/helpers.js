@@ -3,8 +3,10 @@ var parsedQSet = {};
 var yearlyGroup = [];
 var statistics_by_criteria = {};
 var names = [];
+var colors = [];
 var svg = null;
 var lineFn = null;
+var initial = true;
 // ["location_id","location","location_name","year",
 // 			 "age_group_id","age_group","age_start","age_end",
 // 			 "sex_id","sex","metric","mean","lower","upper"];
@@ -114,6 +116,7 @@ var getGlobalData = function(data,subset,metric,group){
 console.log("Statistics by " + group, parsedQSet[subset]);
 console.log(statistics_by_criteria);
 updateGraph();
+initial = false;
 };
 
 var parseByName = function(data, name){
@@ -132,12 +135,104 @@ parsedQSet[name] = location_id_hash_array;
 };
 
 var updateGraph = function(){
-	svg.append("path")
-	   .attr("d", lineFn(lineData))
-       .attr("stroke", "blue")
+var years = Object.keys(parsedQSet.year);
+var yearStart = parseInt(years[0]);
+var lineData = [ { "x": 1990,   "y": .022},  { "x":1994,  "y":.33},
+              { "x": 1996,  "y": .14}, { "x": 2002,  "y": .22}];	
+
+var lineDataF = {};
+var keys = Object.keys(parsedQSet[op3]);
+
+for(var i in keys){
+	var low =  (keys[i]).toString() + "-low";
+	var mean = (keys[i]).toString() + "-mean";
+	var high = (keys[i]).toString() + "-high";
+
+	lineDataF[low] = [];
+	lineDataF[mean] = [];
+	lineDataF[high] = []
+}
+console.log(lineDataF)
+Object.keys(statistics_by_criteria).forEach(function(key, idx){
+	for(var i in statistics_by_criteria[key]){
+		var low  = (i).toString() + "-low";
+		var mean = (i).toString() + "-mean";
+		var high = (i).toString() + "-high";
+		// console.log(low, mean, high)
+		// console.log(statistics_by_criteria[key][i], statistics_by_criteria, statistics_by_criteria[key], i, key)
+		lineDataF[low].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].lavg});
+		lineDataF[mean].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].mavg});
+		lineDataF[high].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].uavg});
+
+	}
+});
+
+
+if(initial){
+	colors = color();
+}
+console.log(colors)
+// ["red", 'green', 'blue', 'purple', 'black', 'grey'];
+
+var idx = 0;
+var count = 0;
+var classCount= 0;
+	for(var i in lineDataF){
+	count++;
+
+	if(!initial){
+		var className = ".line" + (classCount).toString();
+		// console.log(className)
+
+		svg.selectAll(className).transition()
+	  	   .attr("d", lineFn(lineDataF[i]))
+	  	   .attr("stroke", colors[idx])
+       	   .attr("stroke-width", 2)
+       	   .attr("stroke-linejoin", "round")
+           .attr("class", "line"+(classCount).toString())
+           .attr("fill", "none");
+ 		if(count % 3 == 0){
+       		idx++;
+   	    } 	
+			classCount++;
+   		} else {
+
+	 svg.append("path")
+	   .transition()
+	   .attr("d", lineFn(lineDataF[i]))
+       .attr("stroke", colors[idx])
        .attr("stroke-width", 2)
+  	   .attr("stroke-linejoin", "round")
+       .attr("class", "line"+(classCount).toString())
        .attr("fill", "none");
+       if(count % 3 == 0){
+       	idx++;
+       } 
+		classCount++;
+	}
+	}
+    
 };	
+
+var color = function(){
+	var colors = [];
+	var R = 0;
+	var B = 0;
+	var G = 0;
+
+for(var i =0; i< Object.keys(statistics_by_criteria).length;){
+	R = Math.floor(Math.random()*222);
+	B = Math.floor(Math.random()*222);
+	G = Math.floor(Math.random()*222);
+	var color = "rgb(" + R + "," + B + "," + G + ")";
+	if(colors.indexOf(color) <= -1){
+		colors.push(color);
+		i++;
+	};
+}
+return colors;	
+};
+
 
 var addElement = function(type,name,id){
 	var option = document.createElement(type);
@@ -147,24 +242,25 @@ var addElement = function(type,name,id){
 	document.getElementById(id).appendChild(option);
 };
 
-var lineCoordFunction = function(height, width){
+var lineCoordFunction = function(height,width,margin,domainStart,domainEnd,rangeStart,rangeEnd){
 
-var X = d3.scale.linear().range([0, width]);
-var Y = d3.scale.linear().range([height, 0]);
+	var X = d3.scale.linear().domain([domainStart,domainEnd]).range([20, width]);
+	var Y = d3.scale.linear().domain([rangeStart,rangeEnd]).range([height, 0]);
 
 var lineCoords = d3.svg.line()
-				.x(function(d){return d.x})
-				.y(function(d){return d.y})
+				.x(function(d){return X(d.x)})
+				.y(function(d){return Y(d.y)})
 				.interpolate("linear");
 return lineCoords;
 };
 
 
 var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd){
-	lineFn = lineCoordFunction(height, width);
 var margin = {top: 20, right: 20, bottom: 30, left: 40},
     width = width - margin.left - margin.right,
     height = height - margin.top - margin.bottom;
+
+	lineFn = lineCoordFunction(height,width,margin,domainStart,domainEnd,rangeStart,rangeEnd);
 
 var x = d3.scale.linear()
     .domain([domainStart, domainEnd])
@@ -185,18 +281,18 @@ var yAxis = d3.svg.axis()
     .ticks(5)
     .tickSize(-width);
 
-var zoom = d3.behavior.zoom()
-    .x(x)
-    .y(y)
-    .scaleExtent([1, 32])
-    .on("zoom", zoomed);
+// var zoom = d3.behavior.zoom()
+//     .x(x)
+//     .y(y)
+//     .scaleExtent([1, 32])
+//     .on("zoom", zoomed);
 
 svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-    .call(zoom);
+  	.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    // .call(zoom);
 
 svg.append("rect")
     .attr("width", width)
@@ -211,9 +307,9 @@ svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
 
-function zoomed() {
-  svg.select(".x.axis").call(xAxis);
-  svg.select(".y.axis").call(yAxis);
-}
+// function zoomed() {
+//   svg.select(".x.axis").call(xAxis);
+//   svg.select(".y.axis").call(yAxis);
+// }
 }
 

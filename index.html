@@ -61,7 +61,7 @@ Statistics by
 <script>
 
 var filter = ["overweight", "obese"];
-beginParse("./dataset/testdata.csv", filter);
+beginParse("./dataset/2.CSV", filter);
 
 
 var init = function(){
@@ -69,7 +69,7 @@ var init = function(){
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
 
-setUpGraph(1080,500,yearStart,yearStart+years.length,-1,1);
+setUpGraph(1080,500,yearStart,yearStart+years.length,0.0,1.5);
 // Set up options
 Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
 Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"years")});
