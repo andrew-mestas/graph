@@ -17,6 +17,8 @@ rect {
 .axis line {
   fill: none;
   stroke: #fff;
+  shape-rendering: crispEdges;
+
 }</style>
 </head>
 <body>
@@ -61,19 +63,27 @@ Statistics by
 <script>
 
 var filter = ["overweight", "obese","male","female"];
-beginParse("./dataset/testdata.csv", filter);
+beginParse("./dataset/2.CSV", filter);
 
 
 var init = function(){
 
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
+var country = Object.keys(parsedQSet.location_id);
+var countryStart = parseInt(country[0])
 	// var domain = Object.keys(parsedQSet[op1]).map(function(num){
 	// 	if(parseInt(num)!== NaN){
 	// 		return parseInt(num);
 	// 	}
 	// });
-setUpGraph(1080,500,1990,2005,0,1,3);
+
+var ticks = Object.keys(parsedQSet.year).length;
+setUpGraph(1080,500,yearStart,yearStart+years.length,0,1,3);
+
+// var ticks = Object.keys(parsedQSet.location_id).length;
+// setUpGraph(1080,500,countryStart,countryStart+country.length,0,1,3);
+
 // setUpGraphD(1080,500,[1990,2005],-1,1,3);
 // Set up options
 Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
@@ -93,7 +103,15 @@ document.getElementById("sort").addEventListener("click", function(e){
 		}
 	});
 var index= document.getElementById("filter2").options.selectedIndex;
+var first = document.getElementById("filter1").options.selectedIndex;
+var selection =document.getElementById("filter1").options[first].innerHTML;
 var cat = '';
+	if(selection == "year"){
+		years = true;
+	} else {
+		years = false;
+	}
+	console.log(years)
 	switch(index){
 		case 1:
 		case 2: cat = "metric";
@@ -103,7 +121,11 @@ var cat = '';
 		break;
 	}
 	// reorderGraph(domain,-1,1);
-	getGlobalData(parsedQSet, cat, op1, op2, op3);
+
+
+
+	 // setUpGraphD(years);
+	getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
 
 });
 

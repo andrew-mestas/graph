@@ -14,6 +14,7 @@ var gDomain = {};
 var gRange = {};
 var margin = {};
 var reordered = false;
+var graphCreated = false;
 // ["location_id","location","location_name","year",
 // 			 "age_group_id","age_group","age_start","age_end",
 // 			 "sex_id","sex","metric","mean","lower","upper"];
@@ -191,13 +192,13 @@ var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
 var lineDataF = {};
 var keys = Object.keys(parsedQSet[op3]);
-if(!reordered){
+// if(!reordered){
 var scaleX = d3.scale.linear().domain([0, Object.keys(statistics_by_criteria).length]).range([gDomain.start,gDomain.end]);
-} else {
-	console.log(gDomain)
-var scaleX = d3.scale.linear().domain([0,Object.keys(statistics_by_criteria).length]).range(gDomain.array);
+// } else {
+// 	console.log(gDomain)
+// var scaleX = d3.scale.linear().domain([0,Object.keys(statistics_by_criteria).length]).range(gDomain.array);
 
- }
+//  }
 
 for(var i in keys){
 	var low =  (keys[i]).toString() + "-low";
@@ -247,7 +248,7 @@ var classCount= 0;
            .attr("fill", "none");
  		if(count % gColorMod == 0){
        		idx++;
- 			console.log("here",idx)
+ 			// console.log("here",idx)
    	    } 	
 			classCount++;
    		} else {
@@ -312,7 +313,7 @@ return lineCoords;
 };
 
 
-var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd,colorMod){
+var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd,colorMod,ticks){
     margin = {top: 20, right: 20, bottom: 30, left: 40};
 var width = width - margin.left - margin.right,
     height = height - margin.top - margin.bottom;
@@ -336,6 +337,7 @@ var y = d3.scale.linear()
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom")
+    .ticks(ticks)
     .tickSize(-height);
 
 var yAxis = d3.svg.axis()
@@ -370,10 +372,10 @@ svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
 
-// function zoomed() {
-//   svg.select(".x.axis").call(xAxis);
-//   svg.select(".y.axis").call(yAxis);
-// }
+function zoomed() {
+  svg.select(".x.axis").call(xAxis);
+  svg.select(".y.axis").call(yAxis);
+}
 }
 
 //TESTING
@@ -392,62 +394,82 @@ return lineCoords;
 };
 
 
-var setUpGraphD = function(width,height,domain,rangeStart,rangeEnd,colorMod){
-  	gDomain.array = domain;
-    gRange.start = rangeStart;
-    gRange.end = rangeEnd;
-    gColorMod = colorMod;
+var setUpGraphD = function(years){
+	if(years){
+  	  gDomain.array = Object.keys(parsedQSet.year).map(function(i){return parseInt(i)});
+  	  gDomain.start =  gDomain.array[0];
+  	  gDomain.end = gDomain.array[gDomain.array.length-1];
+  	  console.log("YEARS",gDomain)
+
+	} else {
+	  gDomain.array =  Object.keys(parsedQSet.location_id).map(function(i){return parseInt(i)});
+	  gDomain.start = gDomain.array[0];
+	  gDomain.end = gDomain.array[gDomain.array.length-1];
+	}
+    // gRange.start = rangeStart;
+    // gRange.end = rangeEnd;
+    // gColorMod = colorMod;
 	lineFn = lineCoordFunctionD();
-	colorMod = colorMod;
+	// colorMod = colorMod;
     margin = {top: 20, right: 20, bottom: 30, left: 40};
 
 	var width = width - margin.left - margin.right,
     height = height - margin.top - margin.bottom;
-console.log(domain)
 var x = d3.scale.linear()
-    .domain(domain)
-    .range([20, width]);
+    .domain([gDomain.start, gDomain.end])
+    .range([20, gWidth]);
 
 var y = d3.scale.linear()
-    .domain([rangeStart,rangeEnd])
-    .range([height, 0]);
+    .domain([gRange.start,gRange.end])
+    .range([gHeight, 0]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom")
-    .tickSize(-height);
+    .tickSize(-gHeight);
 
 var yAxis = d3.svg.axis()
     .scale(y)
     .orient("left")
     .ticks(5)
-    .tickSize(-width);
+    .tickSize(-gWidth);
 
 // var zoom = d3.behavior.zoom()
 //     .x(x)
 //     .y(y)
 //     .scaleExtent([1, 32])
 //     .on("zoom", zoomed);
-
+if(!graphCreated){
+	console.log("heredsfa")
 svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("width", gWidth + margin.left + margin.right)
+    .attr("height", gHeight + margin.top + margin.bottom)
   	.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     // .call(zoom);
-
-svg.append("rect")
-    .attr("width", width)
-    .attr("height", height);
+    svg.append("rect")
+    .attr("width", gWidth)
+    .attr("height", gHeight);
 
 svg.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
+    .attr("transform", "translate(0," + gHeight + ")")
     .call(xAxis);
 
 svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
+graphCreated = true;
+} else {
+	svg = d3.select("body").select("svg");
+
+ svg.select("rect")
+     .select("g")
+    .call(xAxis);
+
+svg.select("g")
+    .call(yAxis);
+}
 
 // function zoomed() {
 //   svg.select(".x.axis").call(xAxis);
