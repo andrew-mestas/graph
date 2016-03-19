@@ -4,9 +4,16 @@ var yearlyGroup = [];
 var statistics_by_criteria = {};
 var names = [];
 var colors = [];
+var gColorMod = 0;
 var svg = null;
 var lineFn = null;
 var initial = true;
+var gHeight = 0;
+var gWidth = 0;
+var gDomain = {};
+var gRange = {};
+var margin = {};
+var reordered = false;
 // ["location_id","location","location_name","year",
 // 			 "age_group_id","age_group","age_start","age_end",
 // 			 "sex_id","sex","metric","mean","lower","upper"];
@@ -75,12 +82,12 @@ function(error, rows){
 	}
 });
 
-var getGlobalData = function(data,subset,metric,group){
+var getGlobalData = function(data,category,subset,metric,group){
 	yearlyGroup = [];
 	statistics_by_criteria = {};
 	Object.keys(data[subset]).forEach(function(d){
 		var inner = data[subset][d].filter(function(x){
-			if(x.metric == metric){
+			if(x[category] == metric){
 				return x;
 			}
 		});
@@ -134,11 +141,63 @@ parsedQSet[name] = location_id_hash_array;
 // console.log(name + " Parsed " + Object.keys(location_id_hash_array).length + " records.");
 };
 
+var reorderGraph = function(domain,rStart,rEnd){
+	gDomain.array = domain;
+	reordered = true;
+	var x = d3.scale.linear()
+    .domain(domain)
+    .range([20, gWidth]);
+
+	var y = d3.scale.linear()
+    .domain([rStart, rEnd])
+    .range([gHeight, 0]);
+
+	var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .tickSize(-gHeight);
+
+	var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(5)
+    .tickSize(-gWidth);
+
+    svg = d3.select("body").append("svg")
+    .attr("width", gWidth)
+    .attr("height", gHeight)
+  	.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    // .call(zoom);
+
+
+svg.append("rect")
+    .attr("width", gWidth)
+    .attr("height", gHeight);
+
+	svg.selectAll("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + gHeight + ")")
+    .call(xAxis);
+
+	svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);	
+
+};
+
 var updateGraph = function(){
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
 var lineDataF = {};
 var keys = Object.keys(parsedQSet[op3]);
+if(!reordered){
+var scaleX = d3.scale.linear().domain([0, Object.keys(statistics_by_criteria).length]).range([gDomain.start,gDomain.end]);
+} else {
+	console.log(gDomain)
+var scaleX = d3.scale.linear().domain([0,Object.keys(statistics_by_criteria).length]).range(gDomain.array);
+
+ }
 
 for(var i in keys){
 	var low =  (keys[i]).toString() + "-low";
@@ -157,9 +216,9 @@ Object.keys(statistics_by_criteria).forEach(function(key, idx){
 		var high = (i).toString() + "-high";
 		// console.log(low, mean, high)
 		// console.log(statistics_by_criteria[key][i], statistics_by_criteria, statistics_by_criteria[key], i, key)
-		lineDataF[low].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].lavg});
-		lineDataF[mean].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].mavg});
-		lineDataF[high].push({"x": idx+yearStart, "y" : statistics_by_criteria[key][i].uavg});
+		lineDataF[low].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].lavg});
+		lineDataF[mean].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].mavg});
+		lineDataF[high].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].uavg});
 
 	}
 });
@@ -170,7 +229,7 @@ if(initial){
 }
 console.log(colors)
 // ["red", 'green', 'blue', 'purple', 'black', 'grey'];
-
+console.log(lineDataF)
 var idx = 0;
 var count = 0;
 var classCount= 0;
@@ -186,8 +245,9 @@ var classCount= 0;
        	   .attr("stroke-linejoin", "round")
            .attr("class", "line"+(classCount).toString())
            .attr("fill", "none");
- 		if(count % 3 == 0){
+ 		if(count % gColorMod == 0){
        		idx++;
+ 			console.log("here",idx)
    	    } 	
 			classCount++;
    		} else {
@@ -200,8 +260,10 @@ var classCount= 0;
   	   .attr("stroke-linejoin", "round")
        .attr("class", "line"+(classCount).toString())
        .attr("fill", "none");
-       if(count % 3 == 0){
+       if(count % gColorMod == 0){
        	idx++;
+ 			console.log("here",idx)
+
        } 
 		classCount++;
 	}
@@ -237,10 +299,10 @@ var addElement = function(type,name,id){
 	document.getElementById(id).appendChild(option);
 };
 
-var lineCoordFunction = function(height,width,margin,domainStart,domainEnd,rangeStart,rangeEnd){
+var lineCoordFunction = function(){
 
-	var X = d3.scale.linear().domain([domainStart,domainEnd]).range([20, width]);
-	var Y = d3.scale.linear().domain([rangeStart,rangeEnd]).range([height, 0]);
+	var X = d3.scale.linear().domain([gDomain.start,gDomain.end]).range([20, gWidth]);
+	var Y = d3.scale.linear().domain([gRange.start,gRange.end]).range([gHeight, 0]);
 
 var lineCoords = d3.svg.line()
 				.x(function(d){return X(d.x)})
@@ -250,13 +312,19 @@ return lineCoords;
 };
 
 
-var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd){
-var margin = {top: 20, right: 20, bottom: 30, left: 40},
-    width = width - margin.left - margin.right,
+var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd,colorMod){
+    margin = {top: 20, right: 20, bottom: 30, left: 40};
+var width = width - margin.left - margin.right,
     height = height - margin.top - margin.bottom;
-
+    gHeight = height;
+    gWidth = width;
+    gDomain.start = domainStart;
+    gDomain.end = domainEnd;
+    gRange.start = rangeStart;
+    gRange.end = rangeEnd;
+    gColorMod = colorMod;
 	lineFn = lineCoordFunction(height,width,margin,domainStart,domainEnd,rangeStart,rangeEnd);
-
+	colorMod = colorMod;
 var x = d3.scale.linear()
     .domain([domainStart, domainEnd])
     .range([20, width]);
@@ -307,4 +375,84 @@ svg.append("g")
 //   svg.select(".y.axis").call(yAxis);
 // }
 }
+
+//TESTING
+
+
+var lineCoordFunctionD = function(){
+
+	var X = d3.scale.linear().domain(gDomain.array).range([20, gWidth]);
+	var Y = d3.scale.linear().domain([gRange.start,gRange.end]).range([gHeight, 0]);
+reordered = true;
+var lineCoords = d3.svg.line()
+				.x(function(d){return X(d.x)})
+				.y(function(d){return Y(d.y)})
+				.interpolate("linear");
+return lineCoords;
+};
+
+
+var setUpGraphD = function(width,height,domain,rangeStart,rangeEnd,colorMod){
+  	gDomain.array = domain;
+    gRange.start = rangeStart;
+    gRange.end = rangeEnd;
+    gColorMod = colorMod;
+	lineFn = lineCoordFunctionD();
+	colorMod = colorMod;
+    margin = {top: 20, right: 20, bottom: 30, left: 40};
+
+	var width = width - margin.left - margin.right,
+    height = height - margin.top - margin.bottom;
+console.log(domain)
+var x = d3.scale.linear()
+    .domain(domain)
+    .range([20, width]);
+
+var y = d3.scale.linear()
+    .domain([rangeStart,rangeEnd])
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .tickSize(-height);
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(5)
+    .tickSize(-width);
+
+// var zoom = d3.behavior.zoom()
+//     .x(x)
+//     .y(y)
+//     .scaleExtent([1, 32])
+//     .on("zoom", zoomed);
+
+svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  	.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    // .call(zoom);
+
+svg.append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+// function zoomed() {
+//   svg.select(".x.axis").call(xAxis);
+//   svg.select(".y.axis").call(yAxis);
+// }
+}
+
 

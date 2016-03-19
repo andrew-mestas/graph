@@ -60,16 +60,21 @@ Statistics by
 
 <script>
 
-var filter = ["overweight", "obese"];
-beginParse("./dataset/2.CSV", filter);
+var filter = ["overweight", "obese","male","female"];
+beginParse("./dataset/testdata.csv", filter);
 
 
 var init = function(){
 
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
-
-setUpGraph(1080,500,yearStart,yearStart+years.length,0.0,1.5);
+	// var domain = Object.keys(parsedQSet[op1]).map(function(num){
+	// 	if(parseInt(num)!== NaN){
+	// 		return parseInt(num);
+	// 	}
+	// });
+setUpGraph(1080,500,1990,2005,0,1,3);
+// setUpGraphD(1080,500,[1990,2005],-1,1,3);
 // Set up options
 Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
 Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"years")});
@@ -82,7 +87,23 @@ names.forEach(function(n){addElement("option",n,"filter3")});
 
 document.getElementById("sort").addEventListener("click", function(e){
 	e.preventDefault();
-	getGlobalData(parsedQSet, op1, op2, op3);
+	var domain = Object.keys(parsedQSet[op1]).map(function(num){
+		if(parseInt(num)!== NaN){
+			return parseInt(num);
+		}
+	});
+var index= document.getElementById("filter2").options.selectedIndex;
+var cat = '';
+	switch(index){
+		case 1:
+		case 2: cat = "metric";
+		break;
+		case 3:
+		case 4: cat = "sex";
+		break;
+	}
+	// reorderGraph(domain,-1,1);
+	getGlobalData(parsedQSet, cat, op1, op2, op3);
 
 });
 
