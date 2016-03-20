@@ -1,5 +1,6 @@
 var dataset = [];
 var parsedQSet = {};	
+var gLineData = {};
 var yearlyGroup = [];
 var statistics_by_criteria = {};
 var names = [];
@@ -123,8 +124,8 @@ var getGlobalData = function(data,category,subset,metric,group){
 	});
 console.log("Statistics by " + group, parsedQSet[subset]);
 console.log(statistics_by_criteria);
-updateGraph();
-initial = false;
+calculateLineData();
+
 };
 
 var parseByName = function(data, name){
@@ -141,6 +142,22 @@ parsedQSet[name] = location_id_hash_array;
 
 // console.log(name + " Parsed " + Object.keys(location_id_hash_array).length + " records.");
 };
+
+var maxRange = function(){
+	var upper = [];
+	Object.keys(gLineData).forEach(function(data){
+		if(data.indexOf("high") >= 0){
+			gLineData[data].forEach(function(value){
+				upper.push(value.y);
+			});
+		}
+	});
+	upper = d3.max(upper);
+	console.log("UPPER",upper)
+
+	return upper;
+
+}
 
 var reorderGraph = function(domain,rStart,rEnd){
 	gDomain.array = domain;
@@ -164,7 +181,7 @@ var reorderGraph = function(domain,rStart,rEnd){
     .ticks(5)
     .tickSize(-gWidth);
 
-    svg = d3.select("body").append("svg")
+    svg = d3.select(".graph").append("svg")
     .attr("width", gWidth)
     .attr("height", gHeight)
   	.append("g")
@@ -172,7 +189,7 @@ var reorderGraph = function(domain,rStart,rEnd){
     // .call(zoom);
 
 
-svg.append("rect")
+	svg.append("rect")
     .attr("width", gWidth)
     .attr("height", gHeight);
 
@@ -186,10 +203,7 @@ svg.append("rect")
     .call(yAxis);	
 
 };
-
-var updateGraph = function(){
-var years = Object.keys(parsedQSet.year);
-var yearStart = parseInt(years[0]);
+var calculateLineData = function(){
 var lineDataF = {};
 var keys = Object.keys(parsedQSet[op3]);
 // if(!reordered){
@@ -209,7 +223,7 @@ for(var i in keys){
 	lineDataF[mean] = [];
 	lineDataF[high] = [];
 }
-console.log(lineDataF)
+// console.log(lineDataF)
 Object.keys(statistics_by_criteria).forEach(function(key, idx){
 	for(var i in statistics_by_criteria[key]){
 		var low  = (i).toString() + "-low";
@@ -224,55 +238,61 @@ Object.keys(statistics_by_criteria).forEach(function(key, idx){
 	}
 });
 
+gLineData = lineDataF;
+console.log(lineDataF)
 
+}
+
+
+var updateGraph = function(){
+	console.log("?initial", initial)
 if(initial){
 	colors = color();
 }
-console.log(colors)
+// console.log(colors)
 // ["red", 'green', 'blue', 'purple', 'black', 'grey'];
-console.log(lineDataF)
 var idx = 0;
 var count = 0;
 var classCount= 0;
-	for(var i in lineDataF){
+	for(var i in gLineData){
 	count++;
 
 	if(!initial){
 		var className = ".line" + (classCount).toString();
 		svg.selectAll(className).transition()
-	  	   .attr("d", lineFn(lineDataF[i]))
+	  	   .attr("d", lineFn(gLineData[i]))
 	  	   .attr("stroke", colors[idx])
        	   .attr("stroke-width", 2)
        	   .attr("stroke-linejoin", "round")
            .attr("class", "line"+(classCount).toString())
            .attr("fill", "none");
- 		if(count % gColorMod == 0){
+ 		// if(count % gColorMod == 0){
        		idx++;
- 			// console.log("here",idx)
-   	    } 	
+ 		// 	// console.log("here",idx)
+   // 	    } 	
 			classCount++;
    		} else {
-
+console.log("draw Path");
 	 svg.append("path")
 	   .transition()
-	   .attr("d", lineFn(lineDataF[i]))
+	   .attr("d", lineFn(gLineData[i]))
        .attr("stroke", colors[idx])
        .attr("stroke-width", 2)
   	   .attr("stroke-linejoin", "round")
        .attr("class", "line"+(classCount).toString())
        .attr("fill", "none");
-       if(count % gColorMod == 0){
+    //    if(count % gColorMod == 0){
        	idx++;
- 			console.log("here",idx)
+ 			// console.log("here",idx)
 
-       } 
+    //    } 
 		classCount++;
 	}
 	}
     
 };	
 
-var color = function(){
+var randomcolor = function(){
 	var colors = [];
 	var R = 0;
 	var B = 0;
@@ -282,11 +302,39 @@ for(var i =0; i< Object.keys(statistics_by_criteria).length;){
 	R = Math.floor(Math.random()*222);
 	B = Math.floor(Math.random()*222);
 	G = Math.floor(Math.random()*222);
+
 	var color = "rgb(" + R + "," + B + "," + G + ")";
 	if(colors.indexOf(color) <= -1){
 		colors.push(color);
 		i++;
 	};
+}
+return colors;	
+};
+
+
+var color = function(){
+	var colors = [];
+	var R = 0;
+	var B = 0;
+	var G = 0;
+	var c = [199,115,26];
+
+for(var i =0; i< Object.keys(statistics_by_criteria).length;){
+	R = Math.floor(Math.random()*222);
+	// B = Math.floor(Math.random()*222);
+	// G = Math.floor(Math.random()*222);
+	for(var x=0; x < 3;){
+	B = G = c[x];
+	// console.log("hey")
+	var color = "rgb(" + R + "," + B + "," + G + ")";
+
+	if(colors.indexOf(color) <= -1){
+		colors.push(color);
+		i++;
+		x++;
+	};
+	}
 }
 return colors;	
 };
@@ -352,7 +400,7 @@ var yAxis = d3.svg.axis()
 //     .scaleExtent([1, 32])
 //     .on("zoom", zoomed);
 
-svg = d3.select("body").append("svg")
+svg = d3.select(".graph").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   	.append("g")
@@ -376,6 +424,55 @@ function zoomed() {
   svg.select(".x.axis").call(xAxis);
   svg.select(".y.axis").call(yAxis);
 }
+}
+
+var prettyJSON = function(){
+		    var el = {
+            btnAction: $('#action'),
+            btnClear: $('#clear'),
+            result: $('#result')
+        };
+       	var el1 = {
+            btnAction: $('#action1'),
+            btnClear: $('#clear1'),
+            result: $('#result1')
+        };
+        
+        el.btnAction.on('click', function(){
+            var json = parsedQSet;
+            var data;
+            try{ data = json; }
+            catch(e){ 
+                alert('not valid JSON');
+                return;
+            }
+            var node = new PrettyJSON.view.Node({ 
+                el:el.result,
+                data: data,
+                dateFormat:"DD/MM/YYYY - HH24:MI:SS"
+            });
+        });
+        el.btnClear.on('click', function(){
+            el.result.html('');
+        });
+
+        el1.btnAction.on('click', function(){
+            var json = gLineData;
+            var data;
+            try{ data = json; }
+            catch(e){ 
+                alert('not valid JSON');
+                return;
+            }
+            var node = new PrettyJSON.view.Node({ 
+                el:el1.result,
+                data: data,
+                dateFormat:"DD/MM/YYYY - HH24:MI:SS"
+            });
+        });
+        el1.btnClear.on('click', function(){
+            el1.result.html('');
+        });
 }
 
 //TESTING
@@ -441,7 +538,7 @@ var yAxis = d3.svg.axis()
 //     .on("zoom", zoomed);
 if(!graphCreated){
 	console.log("heredsfa")
-svg = d3.select("body").append("svg")
+svg = d3.select(".graph").append("svg")
     .attr("width", gWidth + margin.left + margin.right)
     .attr("height", gHeight + margin.top + margin.bottom)
   	.append("g")
@@ -461,7 +558,7 @@ svg.append("g")
     .call(yAxis);
 graphCreated = true;
 } else {
-	svg = d3.select("body").select("svg");
+	svg = d3.select(".graph").select("svg");
 
  svg.select("rect")
      .select("g")

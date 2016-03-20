@@ -4,7 +4,13 @@
 	<title>Obesity Graph</title>
 <script src="./dataset/d3.js"></script>
 <script src="./dataset/helpers.js"></script>
-<style>svg {
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.2/backbone-min.js"></script>
+<script src="./dataset/prettyJSON.js"></script>
+<link rel="stylesheet" type="text/css" href="./dataset/prettyJSON.css">
+<style>
+svg {
   font: 10px sans-serif;
   shape-rendering: crispEdges;
 }
@@ -19,9 +25,34 @@ rect {
   stroke: #fff;
   shape-rendering: crispEdges;
 
-}</style>
+}
+.area {
+  fill: steelblue;
+}
+.box{
+	width: 100%;
+	height: 300px;
+}
+.left{
+	width: 48%;
+	height: 100%;
+	float: left;
+}
+.right{
+	width: 48%;
+	height: 100%;
+	float: right;
+}
+.info{
+	width: 30%;
+	height: 300px;
+	background: black;
+	float: right;
+}
+</style>
 </head>
 <body>
+<div class="container">
 <input type="file" accept=".csv">
 Locations 
  <select id="locations">
@@ -58,20 +89,60 @@ Statistics by
   <option>Please Select One</option>
   </select>
 <button id="sort">Begin</button>
+<label><input type="checkbox" id="cbox1">Dynamic Range</label><br>
  </form>
+
+<div class="graph"></div>
+</div>
+
+<div class="box">
+<div class="left">
+<h1>Parsed Data</h1>
+<br/>
+<button id="action">View</button>
+<button id="clear">Hide</button>
+<br/>
+<br/>
+<span id="result"></span>
+</div>
+<div class="right">
+<h1>Graph Data</h1>
+<br/>
+<button id="action1">View</button>
+<button id="clear1">Hide</button>
+<br/>
+<br/>
+<span id="result1"></span>
+</div>
+
+</div>
+
 
 <script>
 
+
+// var node = new PrettyJSON.view.Node({
+//   el:$('#elem'),
+//   data:obj
+// });
+
 var filter = ["overweight", "obese","male","female"];
-beginParse("./dataset/2.CSV", filter);
+beginParse("./dataset/testdata.csv", filter);
 
 
 var init = function(){
+prettyJSON();
+
 
 var years = Object.keys(parsedQSet.year);
 var yearStart = parseInt(years[0]);
 var country = Object.keys(parsedQSet.location_id);
-var countryStart = parseInt(country[0])
+var countryStart = parseInt(country[0]);
+var ages = Object.keys(parsedQSet.age_group_id);
+var agesStart = parseInt(ages[0]);
+var previous = "year";
+
+var upper = d3.max(Object.keys(parsedQSet.upper).map(function(value){return parseFloat(value)}));
 	// var domain = Object.keys(parsedQSet[op1]).map(function(num){
 	// 	if(parseInt(num)!== NaN){
 	// 		return parseInt(num);
@@ -79,7 +150,8 @@ var countryStart = parseInt(country[0])
 	// });
 
 var ticks = Object.keys(parsedQSet.year).length;
-setUpGraph(1080,500,yearStart,yearStart+years.length,0,1,3);
+setUpGraph(800,500,yearStart,yearStart+years.length,0,upper,3);
+
 
 // var ticks = Object.keys(parsedQSet.location_id).length;
 // setUpGraph(1080,500,countryStart,countryStart+country.length,0,1,3);
@@ -106,13 +178,7 @@ var index= document.getElementById("filter2").options.selectedIndex;
 var first = document.getElementById("filter1").options.selectedIndex;
 var selection =document.getElementById("filter1").options[first].innerHTML;
 var cat = '';
-	if(selection == "year"){
-		years = true;
-	} else {
-		years = false;
-	}
-	console.log(years)
-	switch(index){
+switch(index){
 		case 1:
 		case 2: cat = "metric";
 		break;
@@ -120,13 +186,56 @@ var cat = '';
 		case 4: cat = "sex";
 		break;
 	}
+	console.log("PREV", previous)
+	if(selection == "year"){
+		// upper = d3.max(Object.keys(parsedQSet.upper).map(function(value){return parseFloat(value)}));
+		ticks = Object.keys(parsedQSet.year).length;
+		getGlobalData(parsedQSet,cat, op1, op2, op3,ticks);
+		var upperYear = maxRange();
+
+		if(previous != "year"){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(yearStart, years)
+		setUpGraph(800,500,yearStart,yearStart+years.length,0,upperYear,3);
+		initial = true;
+
+		}	
+		previous = "year"
+	} else if(selection.indexOf("location") >= 0) {
+		ticks = Object.keys(parsedQSet.location_id).length;
+			getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
+		var upperLoc = maxRange();
+
+		if(previous != "locations"){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(countryStart, country)
+		setUpGraph(800,500,countryStart,countryStart+country.length,0,upperLoc,3);
+		initial = true;
+
+		}
+		previous = "locations";
+	} else if(selection.indexOf("age_group") >= 0){
+		ticks = Object.keys(parsedQSet.age_group).length;
+			getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
+		var upperAge = maxRange();
+
+		if(previous != "ages"){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(countryStart, country)
+		setUpGraph(800,500,agesStart,agesStart+ages.length,0,upperAge,3);
+		initial = true;
+		}
+		previous = "ages"
+	}	
+
+	
 	// reorderGraph(domain,-1,1);
 
 
 
 	 // setUpGraphD(years);
-	getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
-
+updateGraph();
+initial = false;
 });
 
 };
