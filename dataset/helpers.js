@@ -244,7 +244,9 @@ var calculateLineData = function(){
 var updateGraph = function(){
 	console.log("Initial", initial)
  if(initial){
-	colors = color();
+	// colors = color();
+	colors = ["#000000","#0000CD","#008000","#4B0082","#7FFF00","#800000",
+			  "#A0522D","#C71585","#D2691E","#DAA520","#FF0000","#FF8C00"];
  }
  console.log(colors)
  // ["red", 'green', 'blue', 'purple', 'black', 'grey'];
@@ -253,40 +255,71 @@ var updateGraph = function(){
  var classCount= 0;
  var data = {};
  console.log("GLINEDATA",gLineData);
- Object.keys(gLineData).forEach(function(key){
-	console.log("lineData")
-	if(gLineData[key].length > 0){
-		data[key] = gLineData[key];
-	}
- });
- console.log("FILTERED", data)
-	for(var i in data){
+ // Object.keys(gLineData).forEach(function(key){
+	// console.log("lineData")
+	// if(gLineData[key].length > 0){
+	// 	data[key] = gLineData[key];
+	// }
+ // });
+
+
+ // console.log("FILTERED", data)
+	for(var i in gLineData){
 	count++;
+	  var tooltip = d3.select("body")
+		.append("div")
+		.style("position", "absolute")
+		.style("z-index", "10")
+		.style("visibility", "hidden")
+		.style("background-color","black")
+		.style("color", "white")
+		.style("font-size","20px")
+		.style("font-weight","bold")
+    	.attr("class", "tip"+(classCount).toString())
+    	.text(i);
+    
+		var tips = ".tip"+(classCount).toString();
 
 	if(!initial){
 		var className = ".line" + (classCount).toString();
-		svg.selectAll(className).transition()
+		    svg.selectAll(className).transition()
 	  	   .attr("d", lineFn(gLineData[i]))
 	  	   .attr("stroke", colors[idx])
-       	   .attr("stroke-width", 2)
+       	   .attr("stroke-width", 4)
        	   .attr("stroke-linejoin", "round")
            .attr("class", "line"+(classCount).toString())
-           // .attr("fill", "none");
+           .attr("fill", "none")
+
+        svg.selectAll(className)
+        .on("mouseover", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "visible");})
+	  	   .on("mousemove", function(){return d3.select(d3.select(this).attr("tip")).style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+	  	   .on("mouseout", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "hidden");});
+
  		if(count % gColorMod == 0){
        		idx++;
  			// console.log("here",idx)
    	    } 	
 			classCount++;
    		} else {
- console.log("draw Path");
+
+	// .text("a simple tooltip");
 	 svg.append("path")
 	   .transition()
 	   .attr("d", lineFn(gLineData[i]))
+	   .attr("data", i)
+	   .attr("tip",tips)
        .attr("stroke", colors[idx])
-       .attr("stroke-width", 2)
+       .attr("stroke-width", 4)
   	   .attr("stroke-linejoin", "round")
        .attr("class", "line"+(classCount).toString())
-       .attr("fill", "none");
+       .attr("fill", "none")
+
+       svg.selectAll("path")
+       .on("mouseover", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "visible");})
+	   .on("mousemove", function(){return d3.select(d3.select(this).attr("tip")).style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+	   .on("mouseout", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "hidden");});
+
+
        if(count % gColorMod == 0){
        	idx++;
  			// console.log("here",idx)
@@ -358,6 +391,10 @@ var addElement = function(type,name,id){
 	document.getElementById(id).appendChild(option);
 };
 
+var extractInfo = function(data){
+	console.log("data", data)
+
+}
 var lineCoordFunction = function(){
 
 	var X = d3.scale.linear().domain([gDomain.start,gDomain.end]).range([20, gWidth]);
