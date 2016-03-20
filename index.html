@@ -127,7 +127,7 @@ Statistics by
 // });
 
 var filter = ["overweight", "obese","male","female"];
-beginParse("./dataset/testdata.csv", filter);
+beginParse("./dataset/2.CSV", filter);
 
 
 var init = function(){
@@ -169,6 +169,7 @@ names.forEach(function(n){addElement("option",n,"filter3")});
 
 document.getElementById("sort").addEventListener("click", function(e){
 	e.preventDefault();
+	var checked = $("#cbox1")[0].checked;
 	var domain = Object.keys(parsedQSet[op1]).map(function(num){
 		if(parseInt(num)!== NaN){
 			return parseInt(num);
@@ -190,10 +191,10 @@ switch(index){
 	if(selection == "year"){
 		// upper = d3.max(Object.keys(parsedQSet.upper).map(function(value){return parseFloat(value)}));
 		ticks = Object.keys(parsedQSet.year).length;
-		getGlobalData(parsedQSet,cat, op1, op2, op3,ticks);
+		getGlobalData(parsedQSet,cat, op1, op2, op3);
 		var upperYear = maxRange();
 
-		if(previous != "year"){
+		if(checked){
 		document.getElementsByTagName("svg")[0].remove();
 		console.log(yearStart, years)
 		setUpGraph(800,500,yearStart,yearStart+years.length,0,upperYear,3);
@@ -203,10 +204,10 @@ switch(index){
 		previous = "year"
 	} else if(selection.indexOf("location") >= 0) {
 		ticks = Object.keys(parsedQSet.location_id).length;
-			getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
+			getGlobalData(parsedQSet, cat, op1, op2, op3);
 		var upperLoc = maxRange();
 
-		if(previous != "locations"){
+		if(checked){
 		document.getElementsByTagName("svg")[0].remove();
 		console.log(countryStart, country)
 		setUpGraph(800,500,countryStart,countryStart+country.length,0,upperLoc,3);
@@ -216,10 +217,10 @@ switch(index){
 		previous = "locations";
 	} else if(selection.indexOf("age_group") >= 0){
 		ticks = Object.keys(parsedQSet.age_group).length;
-			getGlobalData(parsedQSet, cat, op1, op2, op3,ticks);
+			getGlobalData(parsedQSet, cat, op1, op2, op3);
 		var upperAge = maxRange();
 
-		if(previous != "ages"){
+		if(checked){
 		document.getElementsByTagName("svg")[0].remove();
 		console.log(countryStart, country)
 		setUpGraph(800,500,agesStart,agesStart+ages.length,0,upperAge,3);
