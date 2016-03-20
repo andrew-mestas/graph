@@ -522,19 +522,114 @@ var prettyJSON = function(){
         });
 }
 
-//TESTING
 
+var init = function(){
+	initializeDataForGraph();
+	document.getElementById("sort").addEventListener("click", function(e){
+		e.preventDefault();
+	var checked = $("#cbox1")[0].checked;
+	var domain = Object.keys(parsedQSet[op1]).map(function(num){
+		if(parseInt(num)!== NaN){
+			return parseInt(num);
+		}
+	});
+	var index= document.getElementById("filter2").options.selectedIndex;
+	var first = document.getElementById("filter1").options.selectedIndex;
+	var selection =document.getElementById("filter1").options[first].innerHTML;
+	var cat = '';
+	switch(index){
+		case 1:
+		case 2: cat = "metric";
+		break;
+		case 3:
+		case 4: cat = "sex";
+		break;
+	}
+	console.log("PREV", previous)
+	if(selection == "year"){
+		ticks = Object.keys(parsedQSet.year).length;
+		getGlobalData(parsedQSet,cat, op1, op2, op3);
+		var upperYear = maxRange();
+
+		if(checked){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(yearStart, years)
+		setUpGraph(800,500,yearStart,yearStart+years.length,0,upperYear,3);
+		initial = true;
+		}	
+		previous = "year"
+	} else if(selection.indexOf("location") >= 0) {
+		ticks = Object.keys(parsedQSet.location_id).length;
+		getGlobalData(parsedQSet, cat, op1, op2, op3);
+		var upperLoc = maxRange();
+
+		if(checked){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(countryStart, country)
+		setUpGraph(800,500,countryStart,countryStart+country.length,0,upperLoc,3);
+		initial = true;
+		}
+		previous = "locations";
+	} else if(selection.indexOf("age_group") >= 0){
+		ticks = Object.keys(parsedQSet.age_group).length;
+		getGlobalData(parsedQSet, cat, op1, op2, op3);
+		var upperAge = maxRange();
+
+		if(checked){
+		document.getElementsByTagName("svg")[0].remove();
+		console.log(countryStart, country)
+		setUpGraph(800,500,agesStart,agesStart+ages.length,0,upperAge,3);
+		initial = true;
+		}
+		previous = "ages"
+	}	
+	
+	updateGraph();
+	initial = false;
+});
+};
+
+var initializeDataForGraph = function(){
+
+	prettyJSON();
+
+
+	years = Object.keys(parsedQSet.year);
+	yearStart = parseInt(years[0]);
+	country = Object.keys(parsedQSet.location_id);
+	countryStart = parseInt(country[0]);
+	ages = Object.keys(parsedQSet.age_group_id);
+	agesStart = parseInt(ages[0]);
+	previous = "year";
+
+	var upper = d3.max(Object.keys(parsedQSet.upper).map(function(value){return parseFloat(value)}));
+	var ticks = Object.keys(parsedQSet.year).length;
+	setUpGraph(800,500,yearStart,yearStart+years.length,0,upper,3);
+
+	// Set up options
+	Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
+	Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"years")});
+	Object.keys(parsedQSet.age_group).forEach(function(n){addElement("option",n,"ages")});
+	Object.keys(parsedQSet.sex).forEach(function(n){addElement("option",n,"sex")});
+	Object.keys(parsedQSet.metric).forEach(function(n){addElement("option",n,"metric")});
+	names.forEach(function(n){addElement("option",n,"filter1")});
+	filter.forEach(function(n){addElement("option",n,"filter2")});
+	names.forEach(function(n){addElement("option",n,"filter3")});
+
+}
+
+// TESTING 
 
 var lineCoordFunctionD = function(){
 
 	var X = d3.scale.linear().domain(gDomain.array).range([20, gWidth]);
 	var Y = d3.scale.linear().domain([gRange.start,gRange.end]).range([gHeight, 0]);
-reordered = true;
-var lineCoords = d3.svg.line()
+	reordered = true;
+	var lineCoords = d3.svg.line()
 				.x(function(d){return X(d.x)})
 				.y(function(d){return Y(d.y)})
 				.interpolate("linear");
-return lineCoords;
+	return lineCoords;
 };
 
 
