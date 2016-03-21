@@ -2,7 +2,11 @@ svg {
   font: 10px sans-serif;
   shape-rendering: crispEdges;
 }
-
+/*select, input,  button{
+        border: none;
+    height: 30px;
+    font-family: monospace;
+}*/
 rect {
   fill: #ddd;
 }
