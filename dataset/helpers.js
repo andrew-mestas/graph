@@ -16,16 +16,12 @@ var gRange = {};
 var margin = {};
 var reordered = false;
 var graphCreated = false;
-// ["location_id","location","location_name","year",
-// 			 "age_group_id","age_group","age_start","age_end",
-// 			 "sex_id","sex","metric","mean","lower","upper"];
 var filter = [];
-// ["overweight", "obese"];
-
 var op1 = "", op2 = "", op3 = "";
 
 var beginParse = function(file, filter){
 	setFilter(filter);
+	console.time("d");
 	d3.csv(file, parseFile);
 }
 
@@ -46,27 +42,6 @@ var store = function(val, id){
 
 var parseFile = (
 
-// 	function(d){
-// 	return {
-// 		location_id: +d.location_id,
-// 		location: d.location,
-// 		location_name: d.location_name,
-// 		year: +d.year,
-// 		age_group_id: +d.age_group_id,
-// 		age_group: d.age_group,
-// 		age_start: +d.age_start,
-// 		age_end: +d.age_end,
-// 		sex_id: +d.sex_id,
-// 		sex: d.sex,
-// 		unit: d.unit, 
-// 		metric: d.metric,
-// 		measure: d.measure,
-// 		mean: +d.mean,
-// 		lower: +d.lower,
-// 		upper: +d.upper
-// 	};
-// }, 
-
 function(error, rows){
 	if(error){
 		console.log("There was an error parsing the file: ", error);
@@ -74,17 +49,23 @@ function(error, rows){
 		dataset = rows;
 		console.log("Loaded " + dataset.length + " rows.");
 		names = Object.keys(rows[0]);
-		names.forEach(function(i){parseByName(dataset,i);});
+		console.timeEnd("d");
+		console.time("Initial");
+		for(var i = 0, len = names.length; i< len; i++){
+			parseByName(dataset,names[i]); 
+		};
+		console.timeEnd("Initial")
 		var a = "Done! Rows: " + (dataset.length).toString();
 		addElement("span",a,"info");
 		console.log("All data parsed!");
 		console.log(parsedQSet);
 		init();
-
 	}
 });
 
 var getGlobalData = function(data,category,subset,metric,group){
+	console.time("Parse");
+
 	yearlyGroup = [];
 	statistics_by_criteria = {};
 	Object.keys(data[subset]).forEach(function(d){
@@ -97,31 +78,22 @@ var getGlobalData = function(data,category,subset,metric,group){
 	});
 
 	console.log("Grouped By", subset + " filter for "+ metric, yearlyGroup);
+	for(var i=0, len = yearlyGroup.length; i< len; i++){
+		statistics_by_criteria[i] = {};
 
-	yearlyGroup.forEach(function(countries_by_year, idx){
-		statistics_by_criteria[idx] = {};
-		countries_by_year.forEach(function(age_group){
-			statistics_by_criteria[idx][age_group[group]] = {lower: 0.0, upper: 0.0, mean: 0.0, count: 0, lavg: 0.0, uavg: 0.0, mavg: 0.0};			
-		});
-	});
+		for(var x=0, max = yearlyGroup[i].length; x<max; x++ ){
+			try {
+			statistics_by_criteria[i][yearlyGroup[i][x][group]].lower += parseFloat(yearlyGroup[i][x].lower);
+			} catch(err) {
+			statistics_by_criteria[i][yearlyGroup[i][x][group]] = {lower: 0.0, upper: 0.0, mean: 0.0, count: 0};			
+			}
+			statistics_by_criteria[i][yearlyGroup[i][x][group]].upper += parseFloat(yearlyGroup[i][x].upper);
+			statistics_by_criteria[i][yearlyGroup[i][x][group]].mean += parseFloat(yearlyGroup[i][x].mean);
+			statistics_by_criteria[i][yearlyGroup[i][x][group]].count += 1;
+		};
+	};
 
-	yearlyGroup.forEach(function(countries_by_year, idx){
-
-		countries_by_year.forEach(function(stats){
-			statistics_by_criteria[idx][stats[group]].lower += parseFloat(stats.lower);
-			statistics_by_criteria[idx][stats[group]].upper += parseFloat(stats.upper);
-			statistics_by_criteria[idx][stats[group]].mean += parseFloat(stats.mean);
-			statistics_by_criteria[idx][stats[group]].count += 1;
-		});
-		
-		Object.keys(statistics_by_criteria).forEach(function(i){
-			Object.keys(statistics_by_criteria[i]).forEach(function(x){
-				statistics_by_criteria[i][x].lavg = statistics_by_criteria[i][x].lower / statistics_by_criteria[i][x].count;
-				statistics_by_criteria[i][x].uavg = statistics_by_criteria[i][x].upper / statistics_by_criteria[i][x].count;
-				statistics_by_criteria[i][x].mavg = statistics_by_criteria[i][x].mean / statistics_by_criteria[i][x].count;
-			});
-		});
-	});
+ console.timeEnd("Parse");
  console.log("Statistics by " + group, parsedQSet[subset]);
  console.log(statistics_by_criteria);
  calculateLineData();
@@ -129,17 +101,14 @@ var getGlobalData = function(data,category,subset,metric,group){
 
 var parseByName = function(data, name){
  var location_id_hash_array = {};
-
- // console.log(name + " Parsing...");
- data.forEach(function(record){
-	location_id_hash_array[record[name]] = [];
- });
- data.forEach(function(record){
-	location_id_hash_array[record[name]].push(record);
- });
+ for(var i=0, len = data.length; i < len; i++){
+	try {
+		location_id_hash_array[data[i][name]].push(data[i]);	
+	} catch(err){
+		location_id_hash_array[data[i][name]] = [];
+	} 
+ }
  parsedQSet[name] = location_id_hash_array;
-
- // console.log(name + " Parsed " + Object.keys(location_id_hash_array).length + " records.");
 };
 
 var maxRange = function(){
@@ -152,8 +121,6 @@ var maxRange = function(){
 		}
 	});
 	upper = d3.max(upper);
-	console.log("UPPER",upper)
-
 	return upper;
 }
 
@@ -204,67 +171,51 @@ var reorderGraph = function(domain,rStart,rEnd){
 var calculateLineData = function(){
  var lineDataF = {};
  var keys = Object.keys(parsedQSet[op3]);
- // if(!reordered){
  var scaleX = d3.scale.linear().domain([0, Object.keys(statistics_by_criteria).length]).range([gDomain.start,gDomain.end]);
- // } else {
- // 	console.log(gDomain)
- // var scaleX = d3.scale.linear().domain([0,Object.keys(statistics_by_criteria).length]).range(gDomain.array);
-
- //  }
-
+ 
  for(var i in keys){
 	var low =  (keys[i]).toString() + "-low";
 	var mean = (keys[i]).toString() + "-mean";
 	var high = (keys[i]).toString() + "-high";
-
 	lineDataF[low] = [];
 	lineDataF[mean] = [];
 	lineDataF[high] = [];
  }
  // console.log(lineDataF)
+ console.time("calculate")
  Object.keys(statistics_by_criteria).forEach(function(key, idx){
 	for(var i in statistics_by_criteria[key]){
 		var low  = (i).toString() + "-low";
 		var mean = (i).toString() + "-mean";
 		var high = (i).toString() + "-high";
-		// console.log(low, mean, high)
-		// console.log(statistics_by_criteria[key][i], statistics_by_criteria, statistics_by_criteria[key], i, key)
-		lineDataF[low].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].lavg});
-		lineDataF[mean].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].mavg});
-		lineDataF[high].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].uavg});
-
+		lineDataF[low].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].lower / statistics_by_criteria[key][i].count });
+		lineDataF[mean].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].mean / statistics_by_criteria[key][i].count});
+		lineDataF[high].push({"x": scaleX(idx), "y" : statistics_by_criteria[key][i].upper / statistics_by_criteria[key][i].count});
 	}
- });
-
+ }); 		
+ console.timeEnd("calculate")
  gLineData = lineDataF;
- console.log(lineDataF)
+ // console.log(lineDataF)
 }
 
 
 var updateGraph = function(){
-	console.log("Initial", initial)
+	// console.log("Initial", initial)
  if(initial){
 	// colors = color();
 	colors = ["#000000","#0000CD","#008000","#4B0082","#7FFF00","#800000",
 			  "#A0522D","#C71585","#D2691E","#DAA520","#FF0000","#FF8C00"];
  }
- console.log(colors)
+ // console.log(colors)
  // ["red", 'green', 'blue', 'purple', 'black', 'grey'];
  var idx = 0;
  var count = 0;
  var classCount= 0;
  var data = {};
  console.log("GLINEDATA",gLineData);
- // Object.keys(gLineData).forEach(function(key){
-	// console.log("lineData")
-	// if(gLineData[key].length > 0){
-	// 	data[key] = gLineData[key];
-	// }
- // });
-
-
- // console.log("FILTERED", data)
-	for(var i in gLineData){
+ console.time("graphing")
+ var names = Object.keys(gLineData);
+   for(var i in gLineData){
 	count++;
 	  var tooltip = d3.select("body")
 		.append("div")
@@ -291,18 +242,16 @@ var updateGraph = function(){
            .attr("fill", "none")
 
         svg.selectAll(className)
-        .on("mouseover", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "visible");})
+           .on("mouseover", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "visible");})
 	  	   .on("mousemove", function(){return d3.select(d3.select(this).attr("tip")).style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
 	  	   .on("mouseout", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "hidden");});
 
  		if(count % gColorMod == 0){
        		idx++;
- 			// console.log("here",idx)
    	    } 	
 			classCount++;
    		} else {
 
-	// .text("a simple tooltip");
 	 svg.append("path")
 	   .transition()
 	   .attr("d", lineFn(gLineData[i]))
@@ -312,7 +261,7 @@ var updateGraph = function(){
        .attr("stroke-width", 4)
   	   .attr("stroke-linejoin", "round")
        .attr("class", "line"+(classCount).toString())
-       .attr("fill", "none")
+       .attr("fill", "none");
 
        svg.selectAll("path")
        .on("mouseover", function(){return d3.select(d3.select(this).attr("tip")).style("visibility", "visible");})
@@ -321,14 +270,13 @@ var updateGraph = function(){
 
 
        if(count % gColorMod == 0){
-       	idx++;
- 			// console.log("here",idx)
-
+       	   idx++;
        } 
 		classCount++;
+	   }
 	}
-	}
-    
+     console.timeEnd("graphing")
+
 };	
 
 var randomcolor = function(){
@@ -354,31 +302,17 @@ return colors;
 
 var color = function(){
 	var colors = [];
-	// var R = 0;
-	// var B = 0;
-	// var G = 0;
-	// var c = [199,115,26];
 	var start = 100000;
 // #000066
 
 for(var i =0; i< Object.keys(statistics_by_criteria).length;){
-	console.log("colors")
-	// R = Math.floor(Math.random()*255);
-	// B = Math.floor(Math.random()*222);
-	// G = Math.floor(Math.random()*222);
-	// for(var x=0; x < 3;){
-	// G = c[x];
-	// console.log("hey")
-	// var color = "rgb(" + R + "," + B + "," + G + ")";
 	var color = "#" + (start + i).toString();
 	console.log(color)
 	if(colors.indexOf(color) <= -1){
 		colors.push(color);
 		i++;
-		// x++;
 	};
 	}
-// }
 return colors;	
 };
 
@@ -387,7 +321,6 @@ var addElement = function(type,name,id){
 	var option = document.createElement(type);
 	var text = document.createTextNode(name);
 	option.appendChild(text);
-
 	document.getElementById(id).appendChild(option);
 };
 
@@ -537,14 +470,15 @@ var init = function(){
 	var first = document.getElementById("filter1").options.selectedIndex;
 	var selection =document.getElementById("filter1").options[first].innerHTML;
 	var cat = '';
-	switch(index){
-		case 1:
-		case 2: cat = "metric";
-		break;
-		case 3:
-		case 4: cat = "sex";
-		break;
+
+	if(index == 1 || index == 2){
+		cat = "metric";
+	} else if(index == 3 || index == 4){
+		cat = "sex";
+	} else if(index > 4 && index < 24){
+		cat = "age_group"
 	}
+	
 	console.log("PREV", previous)
 	if(selection == "year"){
 		ticks = Object.keys(parsedQSet.year).length;
@@ -590,9 +524,7 @@ var init = function(){
 };
 
 var initializeDataForGraph = function(){
-
 	prettyJSON();
-
 
 	years = Object.keys(parsedQSet.year);
 	yearStart = parseInt(years[0]);
@@ -615,7 +547,6 @@ var initializeDataForGraph = function(){
 	names.forEach(function(n){addElement("option",n,"filter1")});
 	filter.forEach(function(n){addElement("option",n,"filter2")});
 	names.forEach(function(n){addElement("option",n,"filter3")});
-
 }
 
 // TESTING 
