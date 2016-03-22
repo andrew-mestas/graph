@@ -72,13 +72,15 @@
 
 
 <script>
+var order = ["location_id", "age_group_id", "year"];
 var filter = ["overweight","obese","male","female","2 to 4 yrs","2 to 19 yrs, age-standardized","5 to 9 yrs",
 			  "10 to 14 yrs","15 to 19 yrs","20 to 24 yrs","20+ yrs, age-standardized","25 to 29 yrs","30 to 34 yrs",
 			  "35 to 39 yrs","40 to 44 yrs","45 to 49 yrs","50 to 54 yrs","55 to 59 yrs","60 to 64 yrs","65 to 69 yrs",
 			  "70 to 74 yrs","75 to 79 yrs","80+ yrs"];
+var stats = ["location","year","sex","age_group","metric"];
 
 
-beginParse("./dataset/2.CSV", filter);
+beginParse("./dataset/2.CSV",order,filter,stats);
 </script>
 
 </body>

@@ -16,18 +16,19 @@ var gRange = {};
 var margin = {};
 var reordered = false;
 var graphCreated = false;
+var orderBy = [];
 var filter = [];
+var statisticsBy = []
 var op1 = "", op2 = "", op3 = "";
 
-var beginParse = function(file, filter){
-	setFilter(filter);
+var beginParse = function(file,order,filter,stats){
+	orderBy = order;
+	filter = filter;
+	statisticsBy = stats;
 	console.time("d");
 	d3.csv(file, parseFile);
 }
 
-var setFilter = function(filter){
-	filter = filter;
-}
 
 var store = function(val, id){
 	switch(id){
@@ -215,6 +216,8 @@ var updateGraph = function(){
  console.log("GLINEDATA",gLineData);
  console.time("graphing")
  var names = Object.keys(gLineData);
+ d3.selectAll(".tooltips").remove();
+
    for(var i in gLineData){
 	count++;
 	  var tooltip = d3.select("body")
@@ -226,7 +229,7 @@ var updateGraph = function(){
 		.style("color", "white")
 		.style("font-size","20px")
 		.style("font-weight","bold")
-    	.attr("class", "tip"+(classCount).toString())
+    	.attr("class", "tip"+(classCount).toString() + " tooltips")
     	.text(i);
     
 		var tips = ".tip"+(classCount).toString();
@@ -249,7 +252,9 @@ var updateGraph = function(){
  		if(count % gColorMod == 0){
        		idx++;
    	    } 	
-			classCount++;
+			if(!initial) {
+				classCount++;
+			}
    		} else {
 
 	 svg.append("path")
@@ -260,7 +265,7 @@ var updateGraph = function(){
        .attr("stroke", colors[idx])
        .attr("stroke-width", 4)
   	   .attr("stroke-linejoin", "round")
-       .attr("class", "line"+(classCount).toString())
+       .attr("class", "line"+(classCount).toString() + " lines")
        .attr("fill", "none");
 
        svg.selectAll("path")
@@ -458,8 +463,18 @@ var prettyJSON = function(){
 
 var init = function(){
 	initializeDataForGraph();
+
 	document.getElementById("sort").addEventListener("click", function(e){
 		e.preventDefault();
+		graphing();
+	});
+
+	document.getElementById("cbox1").addEventListener("click", function(e){
+		graphing();
+		// graphing();
+	});
+
+	var graphing = function(){
 	var checked = $("#cbox1")[0].checked;
 	var domain = Object.keys(parsedQSet[op1]).map(function(num){
 		if(parseInt(num)!== NaN){
@@ -520,7 +535,8 @@ var init = function(){
 	
 	updateGraph();
 	initial = false;
-});
+	$("#cbox1")[0].checked = false;
+}
 };
 
 var initializeDataForGraph = function(){
@@ -544,9 +560,9 @@ var initializeDataForGraph = function(){
 	Object.keys(parsedQSet.age_group).forEach(function(n){addElement("option",n,"ages")});
 	Object.keys(parsedQSet.sex).forEach(function(n){addElement("option",n,"sex")});
 	Object.keys(parsedQSet.metric).forEach(function(n){addElement("option",n,"metric")});
-	names.forEach(function(n){addElement("option",n,"filter1")});
+	orderBy.forEach(function(n){addElement("option",n,"filter1")});
 	filter.forEach(function(n){addElement("option",n,"filter2")});
-	names.forEach(function(n){addElement("option",n,"filter3")});
+	statisticsBy.forEach(function(n){addElement("option",n,"filter3")});
 }
 
 // TESTING 
