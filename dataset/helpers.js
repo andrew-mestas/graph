@@ -21,9 +21,8 @@ var filter = [];
 var statisticsBy = []
 var op1 = "", op2 = "", op3 = "";
 
-var beginParse = function(file,order,filter,stats){
+var beginParse = function(file,order,stats){
 	orderBy = order;
-	filter = filter;
 	statisticsBy = stats;
 	console.time("d");
 	d3.csv(file, parseFile);
@@ -488,11 +487,17 @@ var init = function(){
 
 	if(index == 1 || index == 2){
 		cat = "metric";
-	} else if(index == 3 || index == 4){
+	} else if(index >= 3 && index <=5){
 		cat = "sex";
-	} else if(index > 4 && index < 24){
-		cat = "age_group"
-	}
+	} else if(index >= 6 && index <= 24){
+		cat = "age_group";
+	} else if(index >= 25 && index <= 242){
+		cat = "location_name";
+	} 
+
+	//else {
+	//	cat = "year";
+	//}
 	
 	console.log("PREV", previous)
 	if(selection == "year"){
@@ -555,13 +560,12 @@ var initializeDataForGraph = function(){
 	setUpGraph(800,500,yearStart,yearStart+years.length,0,upper,3);
 
 	// Set up options
-	Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"locations")});
-	Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"years")});
-	Object.keys(parsedQSet.age_group).forEach(function(n){addElement("option",n,"ages")});
-	Object.keys(parsedQSet.sex).forEach(function(n){addElement("option",n,"sex")});
-	Object.keys(parsedQSet.metric).forEach(function(n){addElement("option",n,"metric")});
+	Object.keys(parsedQSet.metric).forEach(function(n){addElement("option",n,"filter2")});
+	Object.keys(parsedQSet.sex).forEach(function(n){addElement("option",n,"filter2")});
+	Object.keys(parsedQSet.age_group).forEach(function(n){addElement("option",n,"filter2")});
+	Object.keys(parsedQSet.location_name).forEach(function(n){addElement("option",n,"filter2")});
+	// Object.keys(parsedQSet.year).forEach(function(n){addElement("option",n,"filter2")});
 	orderBy.forEach(function(n){addElement("option",n,"filter1")});
-	filter.forEach(function(n){addElement("option",n,"filter2")});
 	statisticsBy.forEach(function(n){addElement("option",n,"filter3")});
 }
 

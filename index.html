@@ -13,21 +13,10 @@
 <body>
 <div class="container">
 	<input type="file" accept=".csv">
- Locations 
- 	<select id="locations"></select>
- Years 
- 	<select id="years"></select>
- Age Groups 
- <select id="ages"></select>
- Sex
- <select id="sex"></select>
- Metric
- <select id="metric"></select>
-
-	<div id="info">
+ 	<div id="info">
 		Loading...
-	</div>
-  	<br><br><hr>
+	</div>  	
+	<br><hr>
 
  	<form> 	
 	Order By
@@ -44,7 +33,10 @@
   		</select>
 		<button id="sort">Begin</button>
 		<label><input type="checkbox" id="cbox1">Fit Data</label><br>
+
  	</form>
+ 	  	<br><br><hr>
+
 
 	<div class="graph"></div>
 </div>
@@ -73,14 +65,10 @@
 
 <script>
 var order = ["location_id", "age_group_id", "year"];
-var filter = ["overweight","obese","male","female","2 to 4 yrs","2 to 19 yrs, age-standardized","5 to 9 yrs",
-			  "10 to 14 yrs","15 to 19 yrs","20 to 24 yrs","20+ yrs, age-standardized","25 to 29 yrs","30 to 34 yrs",
-			  "35 to 39 yrs","40 to 44 yrs","45 to 49 yrs","50 to 54 yrs","55 to 59 yrs","60 to 64 yrs","65 to 69 yrs",
-			  "70 to 74 yrs","75 to 79 yrs","80+ yrs"];
 var stats = ["location","year","sex","age_group","metric"];
 
 
-beginParse("./dataset/2.CSV",order,filter,stats);
+beginParse("./dataset/2.CSV",order,stats);
 </script>
 
 </body>
