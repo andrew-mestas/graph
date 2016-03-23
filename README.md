@@ -17,7 +17,6 @@ Originally I tried to keep to JavaScript's functional nature which resulted in m
 
 [forEach vs each vs for](https://jsperf.com/foreach-vs-jquery-each/9)
 
-In addition, by reducing the amount of for loops and reevaluating what was necessary to have greating increased the main function where the sorting and filtering begin. 
 
 Once the initial d3 parse is complete then an object is created which contains keys that correspond to the named fields within the csv file the values is data for each of those rows. This global object is used later for additional queries, sorting, filtering, etc...
 
