@@ -404,6 +404,21 @@ var setUpGraph = function(width,height,domainStart,domainEnd,rangeStart,rangeEnd
     .attr("class", "y axis")
     .call(yAxis);
 
+ svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (gHeight / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Percentage"); 
+ svg.append("text")      // text label for the x axis
+        .attr("x", (gWidth / 2))
+        .attr("y", gHeight + margin.bottom)
+        .style("text-anchor", "middle")
+        .attr("id", "xLabel")
+        .text("Order By");
+
+
  function zoomed() {
   svg.select(".x.axis").call(xAxis);
   svg.select(".y.axis").call(yAxis);
@@ -649,6 +664,8 @@ svg.append("g")
 svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
+
+
 graphCreated = true;
 } else {
 	svg = d3.select(".graph").select("svg");

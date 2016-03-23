@@ -12,12 +12,8 @@
 </head>
 <body>
 <div class="container">
-	<input type="file" accept=".csv">
- 	<div id="info">
-		Loading...
-	</div>  	
-	<br><hr>
-
+	<!-- <input type="file" accept=".csv"> -->
+ 		
  	<form> 	
 	Order By
  		<select id="filter1" onchange="store(this.value,1)">
@@ -35,10 +31,15 @@
 		<label><input type="checkbox" id="cbox1">Fit Data</label><br>
 
  	</form>
- 	  	<br><br><hr>
+ 	<br>
+ 	<div id="info">
+		Loading...
+	</div>  
+ 	  	<br><hr>
 
 
 	<div class="graph"></div>
+	<h3>Information<h3><br>The Global Burden of Disease Study 2013 (GBD 2013), coordinated by the Institute for Health Metrics and Evaluation (IHME), estimated the burden of diseases, injuries, and risk factors globally and for 21 regions. This dataset provides prevalence of overweight and obesity, and obesity alone, for 188 countries, 21 regions, and globally by age group and sex, for 1990-2013. The results were published in The Lancet in May 2014 in "Global, regional, and national prevalence of overweight and obesity in children and adults during 1980-2013: a systematic analysis for the Global Burden of Disease Study 2013."
 </div>
 
 <div class="box">

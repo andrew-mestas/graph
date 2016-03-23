@@ -2,11 +2,14 @@ svg {
   font: 10px sans-serif;
   shape-rendering: crispEdges;
 }
-/*select, input,  button{
-        border: none;
-    height: 30px;
+*{
     font-family: monospace;
-}*/
+
+}
+
+select, input,  button{
+    height: 30px;
+}
 rect {
   fill: #ddd;
 }
